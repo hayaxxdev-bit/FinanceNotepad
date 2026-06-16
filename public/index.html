@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pencatat Keuangan Pro Max</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out',
+            'slide-up': 'slideUp 0.3s ease-out',
+            'pulse-soft': 'pulseSoft 2s infinite',
+          },
+          keyframes: {
+            fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
+            slideUp: { from: { opacity: '0', transform: 'translateY(20px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+            pulseSoft: { '0%,100%': { opacity: '1' }, '50%': { opacity: '0.7' } },
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15); }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+    .tab-active { border-bottom: 3px solid #10b981; color: #10b981; font-weight: 600; }
+    .type-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; letter-spacing: 0.02em; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #f1f5f9; } ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; min-width: 280px; animation: slideUp 0.3s ease-out; }
+    #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.85); z-index: 9998; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- LOADING OVERLAY                                             -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="loading-overlay">
+  <div class="text-center">
+    <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+    <p class="text-slate-500 font-medium">Memuat aplikasi...</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- AUTH SECTION                                                -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="auth-section" class="hidden min-h-screen flex items-center justify-center p-4"
+  style="background: linear-gradient(135deg, #0f172a 0%, #134e4a 50%, #0f172a 100%);">
+
+  <!-- Background Pattern -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500 opacity-10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-teal-500 opacity-10 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="w-full max-w-md relative z-10 animate-fade-in">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold text-white">Pencatat Keuangan</h1>
+      <p class="text-emerald-400 font-semibold tracking-widest text-sm mt-1">PRO MAX</p>
+    </div>
+
+    <!-- Auth Card -->
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <!-- Tabs -->
+      <div class="flex border-b border-slate-100">
+        <button id="tab-login" onclick="switchTab('login')"
+          class="flex-1 py-4 text-sm font-medium text-slate-500 hover:text-emerald-600 transition-colors tab-active">
+          Masuk
+        </button>
+        <button id="tab-register" onclick="switchTab('register')"
+          class="flex-1 py-4 text-sm font-medium text-slate-500 hover:text-emerald-600 transition-colors">
+          Daftar
+        </button>
+      </div>
+
+      <div class="p-8">
+        <!-- LOGIN FORM -->
+        <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Alamat Email</label>
+            <input type="email" id="login-email" placeholder="contoh@email.com" required
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+            <div class="relative">
+              <input type="password" id="login-password" placeholder="Minimal 6 karakter" required
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all pr-11" />
+              <button type="button" onclick="togglePass('login-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" id="btn-login"
+            class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95">
+            Masuk ke Akun
+          </button>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="form-register" onsubmit="handleRegister(event)" class="space-y-5 hidden">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Nama Lengkap</label>
+            <input type="text" id="reg-name" placeholder="Nama Anda" required
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Alamat Email</label>
+            <input type="email" id="reg-email" placeholder="contoh@email.com" required
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+            <div class="relative">
+              <input type="password" id="reg-password" placeholder="Minimal 6 karakter" required
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all pr-11" />
+              <button type="button" onclick="togglePass('reg-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" id="btn-register"
+            class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95">
+            Buat Akun Baru
+          </button>
+        </form>
+      </div>
+    </div>
+    <p class="text-center text-slate-400 text-xs mt-6">© 2025 Pencatat Keuangan Pro Max. Aman & Terenkripsi.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- MAIN APP SECTION                                            -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="app-section" class="hidden min-h-screen">
+
+  <!-- TOP NAVBAR -->
+  <nav class="sticky top-0 z-50 bg-white border-b border-slate-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo -->
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-sm">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="hidden sm:block">
+            <span class="font-bold text-slate-800 text-base">Pencatat Keuangan</span>
+            <span class="text-emerald-500 font-bold text-xs ml-1">PRO MAX</span>
+          </div>
+        </div>
+
+        <!-- Right Side -->
+        <div class="flex items-center gap-2 sm:gap-4">
+          <!-- User Info -->
+          <button onclick="openProfileModal()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors">
+            <div class="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-sm" id="nav-avatar">A</div>
+            <span class="hidden sm:block text-sm font-semibold text-slate-700 max-w-[120px] truncate" id="nav-username">Pengguna</span>
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <!-- Logout -->
+          <button onclick="handleLogout()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span class="hidden sm:inline">Keluar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Page Header + Filter -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">Dashboard Keuangan</h2>
+        <p class="text-slate-500 text-sm mt-1">Kelola dan pantau arus keuangan Anda</p>
+      </div>
+      <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
+        <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <select id="filter-month" onchange="loadData()" class="text-sm font-medium text-slate-700 bg-transparent border-none focus:ring-0 focus:shadow-none cursor-pointer">
+          <option value="1">Januari</option><option value="2">Februari</option>
+          <option value="3">Maret</option><option value="4">April</option>
+          <option value="5">Mei</option><option value="6">Juni</option>
+          <option value="7">Juli</option><option value="8">Agustus</option>
+          <option value="9">September</option><option value="10">Oktober</option>
+          <option value="11">November</option><option value="12">Desember</option>
+        </select>
+        <select id="filter-year" onchange="loadData()" class="text-sm font-medium text-slate-700 bg-transparent border-none focus:ring-0 focus:shadow-none cursor-pointer">
+        </select>
+      </div>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div id="summary-section" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+      <!-- Cards rendered by JS -->
+      <div class="col-span-2 md:col-span-3 xl:col-span-4 flex items-center justify-center py-8 text-slate-400">
+        <div class="w-8 h-8 border-3 border-emerald-300 border-t-emerald-500 rounded-full animate-spin mr-3"></div>
+        Memuat ringkasan...
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS SECTION -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <!-- Section Header -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-6 py-5 border-b border-slate-100">
+        <div>
+          <h3 class="font-bold text-slate-800 text-lg">Riwayat Transaksi</h3>
+          <p class="text-slate-400 text-xs mt-0.5" id="trx-count-label">Memuat...</p>
+        </div>
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <!-- Type Filter -->
+          <select id="filter-type" onchange="renderTransactions()" class="text-sm border border-slate-200 rounded-xl px-3 py-2 text-slate-600 bg-white flex-1 sm:flex-none">
+            <option value="">Semua Tipe</option>
+            <option value="pemasukan">Pemasukan</option>
+            <option value="pengeluaran">Pengeluaran</option>
+            <option value="biaya_admin">Biaya Admin</option>
+            <option value="tabungan">Tabungan</option>
+            <option value="biaya_tetap">Biaya Tetap</option>
+            <option value="dana_darurat">Dana Darurat</option>
+          </select>
+          <!-- Add Button -->
+          <button onclick="openAddModal()"
+            class="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Tambah
+          </button>
+        </div>
+      </div>
+
+      <!-- Transaction List -->
+      <div id="transactions-list" class="divide-y divide-slate-50">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden py-16 text-center">
+        <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+        <p class="text-slate-500 font-semibold">Belum ada transaksi</p>
+        <p class="text-slate-400 text-sm mt-1">Klik tombol <strong>Tambah</strong> untuk mencatat transaksi pertama Anda.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- MODAL: TAMBAH / EDIT TRANSAKSI                             -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="modal-transaction" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(15,23,42,0.6); backdrop-filter:blur(4px);">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md animate-slide-up">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+      <h3 id="modal-title" class="text-lg font-bold text-slate-800">Tambah Transaksi</h3>
+      <button onclick="closeModal('modal-transaction')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <form id="form-transaction" onsubmit="handleSaveTransaction(event)" class="px-6 py-5 space-y-4">
+      <input type="hidden" id="trx-id" value="">
+
+      <!-- Tipe Transaksi -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Kategori Transaksi <span class="text-red-400">*</span></label>
+        <select id="trx-type" required class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all">
+          <option value="">— Pilih Kategori —</option>
+          <option value="pemasukan">💰 Pemasukan (Gaji / Pendapatan)</option>
+          <option value="pengeluaran">🛒 Pengeluaran Harian</option>
+          <option value="biaya_admin">🏦 Biaya Administrasi</option>
+          <option value="tabungan">🐷 Tabungan</option>
+          <option value="biaya_tetap">🏠 Biaya Tetap (Sewa/Cicilan)</option>
+          <option value="dana_darurat">🚨 Dana Darurat</option>
+        </select>
+      </div>
+
+      <!-- Jumlah -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Jumlah (Rp) <span class="text-red-400">*</span></label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">Rp</span>
+          <input type="number" id="trx-amount" placeholder="0" min="1" required
+            class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all" />
+        </div>
+      </div>
+
+      <!-- Tanggal -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Tanggal</label>
+        <input type="date" id="trx-date" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all" />
+      </div>
+
+      <!-- Keterangan -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Keterangan <span class="text-slate-400 font-normal">(opsional)</span></label>
+        <textarea id="trx-desc" placeholder="Contoh: Gaji bulan Oktober, Bayar listrik..." rows="2"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all resize-none"></textarea>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modal-transaction')"
+          class="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-all">
+          Batal
+        </button>
+        <button type="submit" id="btn-save-trx"
+          class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all shadow-sm active:scale-95">
+          Simpan
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- MODAL: PROFIL PENGGUNA                                     -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="modal-profile" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(15,23,42,0.6); backdrop-filter:blur(4px);">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm animate-slide-up">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+      <h3 class="text-lg font-bold text-slate-800">Pengaturan Profil</h3>
+      <button onclick="closeModal('modal-profile')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="px-6 py-5">
+      <!-- Avatar -->
+      <div class="flex justify-center mb-5">
+        <div class="w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-3xl" id="profile-avatar">A</div>
+      </div>
+      <!-- Info -->
+      <p class="text-center text-slate-500 text-sm mb-5" id="profile-email">email@domain.com</p>
+
+      <form id="form-profile" onsubmit="handleUpdateProfile(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Nama Lengkap</label>
+          <input type="text" id="profile-name" placeholder="Masukkan nama lengkap Anda" required
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 transition-all" />
+        </div>
+        <div class="flex gap-3">
+          <button type="button" onclick="closeModal('modal-profile')"
+            class="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-all">
+            Batal
+          </button>
+          <button type="submit" id="btn-save-profile"
+            class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all shadow-sm active:scale-95">
+            Simpan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- MODAL: KONFIRMASI HAPUS                                    -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="modal-delete" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(15,23,42,0.6); backdrop-filter:blur(4px);">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm animate-slide-up p-6 text-center">
+    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </div>
+    <h3 class="text-lg font-bold text-slate-800 mb-2">Hapus Transaksi?</h3>
+    <p class="text-slate-500 text-sm mb-6">Tindakan ini tidak dapat dibatalkan. Transaksi akan dihapus secara permanen.</p>
+    <div class="flex gap-3">
+      <button onclick="closeModal('modal-delete')" class="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-all">Batal</button>
+      <button id="btn-confirm-delete" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all active:scale-95">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TOAST CONTAINER                                            -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT APPLICATION LOGIC                               -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ── Config ────────────────────────────────────────────────
+const API = '/api'; // Relatif — bekerja di lokal & Vercel
+
+// ── State ─────────────────────────────────────────────────
+let state = {
+  user: null,
+  token: null,
+  transactions: [],
+  summary: null,
+};
+
+// ── Tipe Transaksi: Label & Style ─────────────────────────
+const TYPE_CONFIG = {
+  pemasukan:    { label: 'Pemasukan',    color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', icon: '💰', isIncome: true },
+  pengeluaran:  { label: 'Pengeluaran',  color: 'bg-red-100 text-red-600',         dot: 'bg-red-500',     icon: '🛒', isIncome: false },
+  biaya_admin:  { label: 'Biaya Admin',  color: 'bg-orange-100 text-orange-600',   dot: 'bg-orange-400',  icon: '🏦', isIncome: false },
+  tabungan:     { label: 'Tabungan',     color: 'bg-blue-100 text-blue-600',       dot: 'bg-blue-500',    icon: '🐷', isIncome: false },
+  biaya_tetap:  { label: 'Biaya Tetap',  color: 'bg-purple-100 text-purple-600',   dot: 'bg-purple-500',  icon: '🏠', isIncome: false },
+  dana_darurat: { label: 'Dana Darurat', color: 'bg-yellow-100 text-yellow-700',   dot: 'bg-yellow-500',  icon: '🚨', isIncome: false },
+};
+
+// ═══════════════════════════════════════════════════════════
+// UTILITAS
+// ═══════════════════════════════════════════════════════════
+
+const $ = (id) => document.getElementById(id);
+
+const formatRupiah = (amount) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0);
+
+const formatTanggal = (dateStr) =>
+  new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+const today = () => new Date().toISOString().split('T')[0];
+
+const getInitials = (name) => {
+  if (!name) return '?';
+  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+};
+
+// Toggle password visibility
+function togglePass(inputId, btn) {
+  const input = $(inputId);
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+// ── Toast Notification ─────────────────────────────────────
+function showToast(message, type = 'success') {
+  const colors = {
+    success: 'bg-emerald-500',
+    error:   'bg-red-500',
+    info:    'bg-blue-500',
+    warning: 'bg-amber-500',
+  };
+  const icons = {
+    success: '✓', error: '✕', info: 'ℹ', warning: '⚠',
+  };
+  const container = $('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast flex items-center gap-3 px-5 py-4 rounded-2xl text-white shadow-2xl ${colors[type]}`;
+  toast.innerHTML = `
+    <span class="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center font-bold text-sm flex-shrink-0">${icons[type]}</span>
+    <span class="text-sm font-medium leading-snug">${message}</span>
+  `;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; toast.style.transition = 'all 0.3s'; }, 3500);
+  setTimeout(() => toast.remove(), 3800);
+}
+
+// ── Loading State ─────────────────────────────────────────
+let loadingCount = 0;
+function setLoading(show) {
+  loadingCount += show ? 1 : -1;
+  $('loading-overlay').style.display = loadingCount > 0 ? 'flex' : 'none';
+}
+
+// ── Modal Control ─────────────────────────────────────────
+function openModal(id) {
+  const m = $(id);
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+function closeModal(id) {
+  const m = $(id);
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
+// ═══════════════════════════════════════════════════════════
+// API HELPER
+// ═══════════════════════════════════════════════════════════
+async function apiFetch(endpoint, options = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+
+  const res = await fetch(`${API}${endpoint}`, { ...options, headers: { ...headers, ...options.headers } });
+  const json = await res.json();
+  return { ok: res.ok, status: res.status, ...json };
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH LOGIC
+// ═══════════════════════════════════════════════════════════
+
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  $('form-login').classList.toggle('hidden', !isLogin);
+  $('form-register').classList.toggle('hidden', isLogin);
+  $('tab-login').className = `flex-1 py-4 text-sm font-medium transition-colors ${isLogin ? 'tab-active text-emerald-600' : 'text-slate-500 hover:text-emerald-600'}`;
+  $('tab-register').className = `flex-1 py-4 text-sm font-medium transition-colors ${!isLogin ? 'tab-active text-emerald-600' : 'text-slate-500 hover:text-emerald-600'}`;
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const btn = $('btn-register');
+  btn.textContent = 'Mendaftarkan...';
+  btn.disabled = true;
+
+  const res = await apiFetch('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: $('reg-name').value.trim(),
+      email: $('reg-email').value.trim(),
+      password: $('reg-password').value,
+    }),
+  });
+
+  btn.textContent = 'Buat Akun Baru';
+  btn.disabled = false;
+
+  if (res.success) {
+    showToast(res.message, 'success');
+    $('form-register').reset();
+    switchTab('login');
+    $('login-email').value = $('reg-email').value;
+  } else {
+    showToast(res.message || 'Registrasi gagal.', 'error');
+  }
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = $('btn-login');
+  btn.textContent = 'Memeriksa...';
+  btn.disabled = true;
+
+  const res = await apiFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: $('login-email').value.trim(),
+      password: $('login-password').value,
+    }),
+  });
+
+  btn.textContent = 'Masuk ke Akun';
+  btn.disabled = false;
+
+  if (res.success) {
+    // Simpan ke localStorage
+    localStorage.setItem('pkpm_token', res.data.access_token);
+    localStorage.setItem('pkpm_user', JSON.stringify(res.data.user));
+    state.token = res.data.access_token;
+    state.user = res.data.user;
+    showToast(res.message, 'success');
+    initApp();
+  } else {
+    showToast(res.message || 'Login gagal.', 'error');
+  }
+}
+
+function handleLogout() {
+  localStorage.removeItem('pkpm_token');
+  localStorage.removeItem('pkpm_user');
+  state = { user: null, token: null, transactions: [], summary: null };
+  $('app-section').classList.add('hidden');
+  $('auth-section').classList.remove('hidden');
+  showToast('Anda telah keluar. Sampai jumpa!', 'info');
+}
+
+async function handleUpdateProfile(e) {
+  e.preventDefault();
+  const btn = $('btn-save-profile');
+  btn.textContent = 'Menyimpan...';
+  btn.disabled = true;
+
+  const res = await apiFetch('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify({ fullName: $('profile-name').value.trim() }),
+  });
+
+  btn.textContent = 'Simpan';
+  btn.disabled = false;
+
+  if (res.success) {
+    state.user.full_name = res.data.user.full_name;
+    localStorage.setItem('pkpm_user', JSON.stringify(state.user));
+    updateNavbar();
+    closeModal('modal-profile');
+    showToast('Profil berhasil diperbarui!', 'success');
+  } else {
+    showToast(res.message || 'Gagal memperbarui profil.', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRANSAKSI LOGIC
+// ═══════════════════════════════════════════════════════════
+
+function openAddModal() {
+  $('trx-id').value = '';
+  $('modal-title').textContent = 'Tambah Transaksi Baru';
+  $('btn-save-trx').textContent = 'Simpan';
+  $('form-transaction').reset();
+  $('trx-date').value = today();
+  openModal('modal-transaction');
+}
+
+function openEditModal(trx) {
+  $('trx-id').value = trx.id;
+  $('modal-title').textContent = 'Edit Transaksi';
+  $('btn-save-trx').textContent = 'Perbarui';
+  $('trx-type').value = trx.type;
+  $('trx-amount').value = trx.amount;
+  $('trx-date').value = trx.date;
+  $('trx-desc').value = trx.description || '';
+  openModal('modal-transaction');
+}
+
+async function handleSaveTransaction(e) {
+  e.preventDefault();
+  const btn = $('btn-save-trx');
+  const id = $('trx-id').value;
+  const isEdit = !!id;
+  btn.textContent = 'Menyimpan...';
+  btn.disabled = true;
+
+  const body = {
+    type: $('trx-type').value,
+    amount: $('trx-amount').value,
+    description: $('trx-desc').value.trim(),
+    date: $('trx-date').value || today(),
+  };
+
+  const res = await apiFetch(isEdit ? `/transactions/${id}` : '/transactions', {
+    method: isEdit ? 'PUT' : 'POST',
+    body: JSON.stringify(body),
+  });
+
+  btn.textContent = isEdit ? 'Perbarui' : 'Simpan';
+  btn.disabled = false;
+
+  if (res.success) {
+    closeModal('modal-transaction');
+    showToast(res.message, 'success');
+    await loadData();
+  } else {
+    showToast(res.message || 'Gagal menyimpan transaksi.', 'error');
+  }
+}
+
+let pendingDeleteId = null;
+function confirmDelete(id) {
+  pendingDeleteId = id;
+  openModal('modal-delete');
+  $('btn-confirm-delete').onclick = async () => {
+    closeModal('modal-delete');
+    const res = await apiFetch(`/transactions/${pendingDeleteId}`, { method: 'DELETE' });
+    if (res.success) {
+      showToast('Transaksi berhasil dihapus.', 'success');
+      await loadData();
+    } else {
+      showToast(res.message || 'Gagal menghapus.', 'error');
+    }
+    pendingDeleteId = null;
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════════
+
+async function loadData() {
+  const month = $('filter-month').value;
+  const year = $('filter-year').value;
+  const query = `?month=${month}&year=${year}`;
+
+  // Load parallel: summary + transactions
+  const [summaryRes, trxRes] = await Promise.all([
+    apiFetch(`/summary${query}`),
+    apiFetch(`/transactions${query}`),
+  ]);
+
+  if (summaryRes.success) {
+    state.summary = summaryRes.data;
+    renderSummary(summaryRes.data);
+  }
+
+  if (trxRes.success) {
+    state.transactions = trxRes.data;
+    renderTransactions();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER: SUMMARY CARDS
+// ═══════════════════════════════════════════════════════════
+
+function renderSummary(d) {
+  const saldoPositif = d.saldo_bersih >= 0;
+
+  const cards = [
+    {
+      label: 'Pemasukan', value: d.pemasukan,
+      icon: '💰', bg: 'bg-emerald-50', border: 'border-emerald-200',
+      textVal: 'text-emerald-700', textLabel: 'text-emerald-600',
+    },
+    {
+      label: 'Pengeluaran', value: d.pengeluaran,
+      icon: '🛒', bg: 'bg-red-50', border: 'border-red-200',
+      textVal: 'text-red-600', textLabel: 'text-red-500',
+    },
+    {
+      label: 'Biaya Admin', value: d.biaya_admin,
+      icon: '🏦', bg: 'bg-orange-50', border: 'border-orange-200',
+      textVal: 'text-orange-600', textLabel: 'text-orange-500',
+    },
+    {
+      label: 'Tabungan', value: d.tabungan,
+      icon: '🐷', bg: 'bg-blue-50', border: 'border-blue-200',
+      textVal: 'text-blue-600', textLabel: 'text-blue-500',
+    },
+    {
+      label: 'Biaya Tetap', value: d.biaya_tetap,
+      icon: '🏠', bg: 'bg-purple-50', border: 'border-purple-200',
+      textVal: 'text-purple-600', textLabel: 'text-purple-500',
+    },
+    {
+      label: 'Dana Darurat', value: d.dana_darurat,
+      icon: '🚨', bg: 'bg-yellow-50', border: 'border-yellow-200',
+      textVal: 'text-yellow-700', textLabel: 'text-yellow-600',
+    },
+  ];
+
+  const saldoCard = `
+    <div class="col-span-2 md:col-span-3 xl:col-span-4 rounded-2xl p-5 border-2 card-hover
+      ${saldoPositif ? 'bg-gradient-to-r from-emerald-500 to-teal-500 border-emerald-400' : 'bg-gradient-to-r from-red-500 to-rose-500 border-red-400'}
+      text-white shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-white/80 text-sm font-medium mb-1">Saldo Bersih Bulan Ini</p>
+          <p class="text-3xl sm:text-4xl font-black tracking-tight">${formatRupiah(d.saldo_bersih)}</p>
+          <p class="text-white/70 text-xs mt-2 font-medium">
+            Pemasukan ${formatRupiah(d.pemasukan)} − Total Pengeluaran ${formatRupiah(d.total_keluar)}
+          </p>
+        </div>
+        <div class="text-5xl opacity-90">${saldoPositif ? '📈' : '📉'}</div>
+      </div>
+      <div class="mt-4 pt-4 border-t border-white/20 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+        <span class="bg-white/15 rounded-lg px-3 py-1.5">Pengeluaran: ${formatRupiah(d.pengeluaran)}</span>
+        <span class="bg-white/15 rounded-lg px-3 py-1.5">Adm: ${formatRupiah(d.biaya_admin)}</span>
+        <span class="bg-white/15 rounded-lg px-3 py-1.5">Tabungan: ${formatRupiah(d.tabungan)}</span>
+        <span class="bg-white/15 rounded-lg px-3 py-1.5">Tetap: ${formatRupiah(d.biaya_tetap)}</span>
+        <span class="bg-white/15 rounded-lg px-3 py-1.5 col-span-2 sm:col-span-1">Darurat: ${formatRupiah(d.dana_darurat)}</span>
+      </div>
+    </div>
+  `;
+
+  const smallCards = cards.map(c => `
+    <div class="rounded-2xl p-4 border card-hover ${c.bg} ${c.border} shadow-sm">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-xl">${c.icon}</span>
+        <p class="text-xs font-semibold ${c.textLabel}">${c.label}</p>
+      </div>
+      <p class="text-lg font-black ${c.textVal} leading-tight">${formatRupiah(c.value)}</p>
+    </div>
+  `).join('');
+
+  $('summary-section').innerHTML = saldoCard + smallCards;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER: TRANSACTION LIST
+// ═══════════════════════════════════════════════════════════
+
+function renderTransactions() {
+  const filterType = $('filter-type').value;
+  let data = state.transactions;
+  if (filterType) data = data.filter(t => t.type === filterType);
+
+  $('trx-count-label').textContent = `${data.length} transaksi tercatat`;
+
+  if (data.length === 0) {
+    $('transactions-list').innerHTML = '';
+    $('empty-state').classList.remove('hidden');
+    return;
+  }
+  $('empty-state').classList.add('hidden');
+
+  $('transactions-list').innerHTML = data.map(t => {
+    const cfg = TYPE_CONFIG[t.type] || { label: t.type, color: 'bg-slate-100 text-slate-600', icon: '📌', isIncome: false };
+    return `
+      <div class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/80 transition-colors group">
+        <!-- Icon -->
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 bg-slate-100">${cfg.icon}</div>
+
+        <!-- Info -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="type-badge ${cfg.color}">${cfg.label}</span>
+            ${t.description ? `<span class="text-xs text-slate-400 truncate max-w-[180px]">${t.description}</span>` : ''}
+          </div>
+          <p class="text-xs text-slate-400 mt-1">${formatTanggal(t.date)}</p>
+        </div>
+
+        <!-- Amount -->
+        <div class="text-right flex-shrink-0">
+          <p class="font-bold text-sm ${cfg.isIncome ? 'text-emerald-600' : 'text-slate-700'}">
+            ${cfg.isIncome ? '+' : '−'} ${formatRupiah(t.amount)}
+          </p>
+        </div>
+
+        <!-- Actions (appear on hover) -->
+        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          <button onclick='openEditModal(${JSON.stringify(t)})' title="Edit"
+            class="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </button>
+          <button onclick="confirmDelete('${t.id}')" title="Hapus"
+            class="w-8 h-8 rounded-lg hover:bg-red-100 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROFILE MODAL
+// ═══════════════════════════════════════════════════════════
+
+function openProfileModal() {
+  $('profile-avatar').textContent = getInitials(state.user?.full_name || state.user?.email);
+  $('profile-email').textContent = state.user?.email || '';
+  $('profile-name').value = state.user?.full_name || '';
+  openModal('modal-profile');
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVBAR UPDATE
+// ═══════════════════════════════════════════════════════════
+
+function updateNavbar() {
+  const name = state.user?.full_name || state.user?.email || 'Pengguna';
+  $('nav-username').textContent = name.split(' ')[0];
+  $('nav-avatar').textContent = getInitials(name);
+}
+
+// ═══════════════════════════════════════════════════════════
+// FILTER YEAR POPULATION
+// ═══════════════════════════════════════════════════════════
+
+function populateYearFilter() {
+  const currentYear = new Date().getFullYear();
+  const select = $('filter-year');
+  for (let y = currentYear; y >= currentYear - 5; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    select.appendChild(opt);
+  }
+  select.value = currentYear;
+}
+
+function setDefaultMonthFilter() {
+  $('filter-month').value = new Date().getMonth() + 1;
+}
+
+// ═══════════════════════════════════════════════════════════
+// APP INITIALIZATION
+// ═══════════════════════════════════════════════════════════
+
+function initApp() {
+  // Tampilkan app, sembunyikan auth
+  $('auth-section').classList.add('hidden');
+  $('app-section').classList.remove('hidden');
+
+  updateNavbar();
+  loadData();
+}
+
+async function bootstrap() {
+  // Ambil token dari localStorage (session persisten)
+  const token = localStorage.getItem('pkpm_token');
+  const userStr = localStorage.getItem('pkpm_user');
+
+  if (token && userStr) {
+    try {
+      state.token = token;
+      state.user = JSON.parse(userStr);
+
+      // Verifikasi token masih valid ke server
+      const res = await apiFetch('/summary?month=1&year=2000');
+      if (res.status === 403 || res.status === 401) {
+        // Token expired — redirect ke login
+        handleLogout();
+        $('loading-overlay').style.display = 'none';
+        $('auth-section').classList.remove('hidden');
+        return;
+      }
+
+      // Token valid — langsung masuk app
+      initApp();
+    } catch {
+      handleLogout();
+    }
+  } else {
+    $('auth-section').classList.remove('hidden');
+  }
+
+  $('loading-overlay').style.display = 'none';
+}
+
+// ── Tutup modal saat klik backdrop ───────────────────────
+['modal-transaction', 'modal-profile', 'modal-delete'].forEach(id => {
+  $(id).addEventListener('click', (e) => {
+    if (e.target.id === id) closeModal(id);
+  });
+});
+
+// ── Keyboard Escape untuk tutup modal ────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    ['modal-transaction', 'modal-profile', 'modal-delete'].forEach(closeModal);
+  }
+});
+
+// ── Jalankan Aplikasi ─────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  populateYearFilter();
+  setDefaultMonthFilter();
+  bootstrap();
+});
+</script>
+</body>
+</html>
