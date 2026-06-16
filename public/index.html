@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Pencatat Keuangan Pro Max - Financial tracker dengan analisis lengkap">
+  <meta name="theme-color" content="#0B030D">
+  <title>Pencatat Keuangan Pro Max</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'hitam-pekat': '#0B030D',
+            'rose-gold': '#B76E79',
+            'biru-malam': '#1A237E',
+            'magenta-tua': '#A020F0',
+            'medium-plum': '#6C3082',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Remix Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet"/>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  </style>
+</head>
+<body class="min-h-screen bg-hitam-pekat text-white font-sans">
+
+<!-- Auth Modal -->
+<div id="authModal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+  <div class="gradient-border w-full max-w-md">
+    <div class="glass-card p-8 rounded-2xl relative">
+      <div class="text-center mb-8">
+        <i class="ri-money-dollar-circle-line text-6xl gradient-text block mb-4"></i>
+        <h2 class="text-3xl font-bold gradient-text" id="authTitle">Welcome Back</h2>
+        <p class="text-rose-gold/70 mt-2">Kelola keuangan dengan mudah</p>
+      </div>
+      
+      <form id="authForm" class="space-y-4">
+        <div id="fullNameField" class="hidden">
+          <label class="text-rose-gold text-sm font-medium">Nama Lengkap</label>
+          <input type="text" id="fullName" class="w-full p-3 rounded-xl mt-1" placeholder="John Doe">
+        </div>
+        
+        <div>
+          <label class="text-rose-gold text-sm font-medium">Email</label>
+          <input type="email" id="email" required class="w-full p-3 rounded-xl mt-1" placeholder="your@email.com">
+        </div>
+        
+        <div>
+          <label class="text-rose-gold text-sm font-medium">Password</label>
+          <input type="password" id="password" required class="w-full p-3 rounded-xl mt-1" placeholder="••••••••" minlength="6">
+        </div>
+        
+        <button type="submit" id="authSubmitBtn" class="btn-primary w-full py-3 rounded-xl font-bold mt-6">
+          Sign In
+        </button>
+      </form>
+      
+      <p class="text-center mt-4 text-sm text-rose-gold/70">
+        <span id="authToggleText">Don't have an account?</span>
+        <button id="authToggleBtn" class="text-magenta-tua font-bold ml-1 hover:underline">
+          Sign Up
+        </button>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="mainApp" class="hidden">
+  <!-- Header -->
+  <header class="glass-card sticky top-0 z-40 border-b border-rose-gold/20 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <i class="ri-money-dollar-circle-line text-3xl gradient-text"></i>
+          <div>
+            <h1 class="text-xl font-bold gradient-text hidden sm:block">Finance Pro Max</h1>
+            <p class="text-xs text-rose-gold/50 hidden sm:block">Pencatat Keuangan Profesional</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+          <button onclick="app.loadData()" id="refreshBtn" class="text-rose-gold hover:text-magenta-tua transition" title="Refresh data">
+            <i class="ri-refresh-line text-xl"></i>
+          </button>
+          
+          <div class="hidden sm:flex items-center gap-2 text-sm">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-rose-gold to-magenta-tua flex items-center justify-center">
+              <span id="userInitial" class="text-xs font-bold">U</span>
+            </div>
+            <div>
+              <p id="userName" class="font-medium text-white"></p>
+              <p id="userEmail" class="text-xs text-rose-gold/70"></p>
+            </div>
+          </div>
+          
+          <button onclick="auth.logout()" class="btn-secondary py-2 px-4 rounded-xl text-sm">
+            <i class="ri-logout-box-r-line mr-1"></i> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Financial Health Status -->
+    <div class="glass-card p-6 rounded-2xl mb-6 gradient-border">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-lg font-bold text-rose-gold">Status Keuangan</h3>
+          <p id="financialStatus" class="text-2xl font-bold mt-1">-</p>
+        </div>
+        <i class="ri-heart-pulse-line text-4xl gradient-text"></i>
+      </div>
+      <p id="financialMessage" class="text-rose-gold/80 mb-3"></p>
+      <ul id="financialRecommendations" class="space-y-2 text-sm"></ul>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div class="glass-card p-4 rounded-2xl hover:border-rose-gold/30 transition-all">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="ri-arrow-up-circle-line text-green-400"></i>
+          <p class="text-rose-gold text-xs">Pemasukan</p>
+        </div>
+        <p class="text-green-400 font-bold text-lg" id="statIncome">Rp 0</p>
+      </div>
+      
+      <div class="glass-card p-4 rounded-2xl hover:border-rose-gold/30 transition-all">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="ri-arrow-down-circle-line text-red-400"></i>
+          <p class="text-rose-gold text-xs">Pengeluaran</p>
+        </div>
+        <p class="text-red-400 font-bold text-lg" id="statExpense">Rp 0</p>
+      </div>
+      
+      <div class="glass-card p-4 rounded-2xl hover:border-rose-gold/30 transition-all">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="ri-bank-line text-blue-400"></i>
+          <p class="text-rose-gold text-xs">Tabungan</p>
+        </div>
+        <p class="text-blue-400 font-bold text-lg" id="statSavings">Rp 0</p>
+      </div>
+      
+      <div class="glass-card p-4 rounded-2xl hover:border-rose-gold/30 transition-all">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="ri-wallet-3-line text-magenta-tua"></i>
+          <p class="text-rose-gold text-xs">Saldo Bersih</p>
+        </div>
+        <p class="text-magenta-tua font-bold text-lg" id="statNet">Rp 0</p>
+      </div>
+    </div>
+
+    <!-- Charts & Analytics Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div class="glass-card p-6 rounded-2xl">
+        <h3 class="text-lg font-bold text-rose-gold mb-4">Grafik Keuangan</h3>
+        <div id="incomeExpenseChart" class="chart-container"></div>
+      </div>
+      
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-rose-gold">Analisis Kategori</h3>
+          <select id="periodSelect" class="p-2 rounded-xl text-sm bg-transparent border border-rose-gold/30">
+            <option value="daily">Harian</option>
+            <option value="weekly">Mingguan</option>
+            <option value="monthly" selected>Bulanan</option>
+            <option value="yearly">Tahunan</option>
+          </select>
+        </div>
+        <div id="categoryBreakdown" class="space-y-3 max-h-64 overflow-y-auto"></div>
+      </div>
+    </div>
+
+    <!-- Add Transaction Form -->
+    <div class="glass-card p-6 rounded-2xl mb-6 gradient-border">
+      <h3 class="text-lg font-bold text-rose-gold mb-4">
+        <i class="ri-add-circle-line mr-2"></i>Catat Transaksi Baru
+      </h3>
+      
+      <form id="txForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+        <select id="txType" class="p-3 rounded-xl col-span-1">
+          <option value="income">💰 Pemasukan</option>
+          <option value="expense">📤 Pengeluaran</option>
+          <option value="fixed">🏠 Biaya Tetap</option>
+          <option value="admin">🏦 Biaya Admin</option>
+          <option value="savings">🐷 Tabungan</option>
+          <option value="other">📦 Lainnya</option>
+        </select>
+        
+        <select id="txCategory" class="p-3 rounded-xl col-span-1"></select>
+        
+        <input type="number" id="txAmount" placeholder="Jumlah (Rp)" class="p-3 rounded-xl" step="0.01" min="0">
+        
+        <input type="text" id="txDescription" placeholder="Deskripsi (opsional)" class="p-3 rounded-xl col-span-1 lg:col-span-2">
+        
+        <input type="date" id="txDate" class="p-3 rounded-xl">
+        
+        <button type="submit" class="btn-primary p-3 rounded-xl font-bold col-span-1">
+          <i class="ri-add-line"></i> Tambah
+        </button>
+      </form>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="glass-card p-6 rounded-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-rose-gold">
+          <i class="ri-history-line mr-2"></i>Riwayat Transaksi
+        </h3>
+        
+        <div class="flex gap-2">
+          <select id="filterType" class="p-2 rounded-xl text-sm bg-transparent border border-rose-gold/30">
+            <option value="all">Semua Tipe</option>
+            <option value="income">Pemasukan</option>
+            <option value="expense">Pengeluaran</option>
+            <option value="fixed">Biaya Tetap</option>
+            <option value="admin">Biaya Admin</option>
+            <option value="savings">Tabungan</option>
+            <option value="other">Lainnya</option>
+          </select>
+          
+          <button onclick="app.exportData()" id="exportBtn" class="btn-secondary py-2 px-3 rounded-xl text-sm" title="Export data">
+            <i class="ri-download-line"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div id="transactionList" class="space-y-3 max-h-96 overflow-y-auto"></div>
+    </div>
+  </main>
+  
+  <!-- Footer -->
+  <footer class="border-t border-rose-gold/20 mt-8">
+    <div class="max-w-7xl mx-auto px-4 py-4 text-center text-rose-gold/50 text-sm">
+      <p>💰 Pencatat Keuangan Pro Max v2.0 | Made with ❤️</p>
+    </div>
+  </footer>
+</div>
+
+<!-- Scripts -->
+<script src="/js/auth.js"></script>
+<script src="/js/charts.js"></script>
+<script src="/js/app.js"></script>
+
+</body>
+</html>

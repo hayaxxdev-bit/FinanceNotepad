@@ -15,10 +15,11 @@
   },
   "license": "ISC",
   "author": "hayaxxdev-bit",
-  "type": "module",
+  "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
@@ -27,6 +28,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
+    "express-session": "^1.19.0",
+    "fs": "^0.0.1-security",
     "helmet": "^8.2.0",
     "morgan": "^1.11.0"
   },
