@@ -1,0 +1,36 @@
+{
+  "name": "financenotepad",
+  "version": "1.0.0",
+  "description": "Program finance",
+  "keywords": [
+    "Finance"
+  ],
+  "homepage": "https://github.com/hayaxxdev-bit/FinanceNotepad#readme",
+  "bugs": {
+    "url": "https://github.com/hayaxxdev-bit/FinanceNotepad/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hayaxxdev-bit/FinanceNotepad.git"
+  },
+  "license": "ISC",
+  "author": "hayaxxdev-bit",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "morgan": "^1.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
